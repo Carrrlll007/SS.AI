@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { StudioShapeSite } from '@/lib/types';
 
-const GEMINI_MODEL = 'gemini-1.5-flash-latest';
+// Use a model name supported by the v1beta generateContent endpoint.
+const GEMINI_MODEL = 'gemini-1.5-flash';
 const OPENAI_MODEL = 'gpt-4o-mini';
 
 const systemPrompt =
