@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:all": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-adk-agents.ps1",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
