@@ -1,0 +1,27 @@
+{
+  "name": "Page",
+  "type": "object",
+  "properties": {
+    "site_id": {
+      "type": "string",
+      "description": "ID of the parent site"
+    },
+    "title": {
+      "type": "string",
+      "description": "Page title"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL slug (e.g., 'about', 'pricing')"
+    },
+    "order": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "site_id",
+    "title",
+    "slug"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "Subscription",
+  "type": "object",
+  "properties": {
+    "plan": {
+      "type": "string",
+      "enum": [
+        "free",
+        "mid",
+        "pro"
+      ],
+      "default": "free"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "canceled",
+        "past_due"
+      ],
+      "default": "active"
+    },
+    "billing_period": {
+      "type": "string",
+      "enum": [
+        "monthly",
+        "yearly"
+      ],
+      "default": "monthly"
+    },
+    "next_billing_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": []
+}

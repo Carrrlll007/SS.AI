@@ -1,0 +1,51 @@
+{
+  "name": "Site",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The internal name of the site"
+    },
+    "subdomain": {
+      "type": "string",
+      "description": "Unique subdomain identifier"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published"
+      ],
+      "default": "draft"
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description for AI generation context"
+    },
+    "theme": {
+      "type": "object",
+      "properties": {
+        "primaryColor": {
+          "type": "string",
+          "default": "#4f46e5"
+        },
+        "font": {
+          "type": "string",
+          "default": "Inter"
+        },
+        "style": {
+          "type": "string",
+          "enum": [
+            "modern",
+            "minimal",
+            "bold"
+          ],
+          "default": "modern"
+        }
+      }
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

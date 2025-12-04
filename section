@@ -1,0 +1,36 @@
+{
+  "name": "Section",
+  "type": "object",
+  "properties": {
+    "page_id": {
+      "type": "string",
+      "description": "ID of the parent page"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "hero",
+        "features",
+        "testimonials",
+        "cta",
+        "faq",
+        "text",
+        "footer"
+      ],
+      "description": "The type of component to render"
+    },
+    "content": {
+      "type": "object",
+      "description": "JSON content specific to the section type",
+      "additionalProperties": true
+    },
+    "order": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "page_id",
+    "type"
+  ]
+}
