@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Menu, ArrowRight, Sparkles, Wand2, Layout, Palette } from 'lucide-react';
@@ -8,6 +8,7 @@ import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
+import type { StudioShapeSite } from '@/lib/types';
 
 const steps = [
   { title: 'Pick a workspace', body: 'Sign up to StudioShape and set your brand basics in minutes.' },
@@ -35,10 +36,54 @@ const FeatureBubble = ({ label }: { label: string }) => (
 
 export default function Home() {
   const router = useRouter();
+  const [shapePrompt, setShapePrompt] = useState(
+    'Build a bold landing page for SHAPEAI that explains how it designs and ships multi-agent sites.'
+  );
+  const [shapeConfig, setShapeConfig] = useState<StudioShapeSite | null>(null);
+  const [shapeMessages, setShapeMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>([]);
+  const [shapeLoading, setShapeLoading] = useState(false);
+  const [shapeError, setShapeError] = useState<string | null>(null);
 
   const handleHeroSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     router.push('/signup');
+  };
+
+  const handleShapeSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const prompt = shapePrompt.trim();
+    if (!prompt) return;
+
+    setShapeLoading(true);
+    setShapeError(null);
+    try {
+      const res = await fetch('/api/generate-site', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) {
+        setShapeError(data?.error || 'Something went wrong calling SHAPEAI.');
+        return;
+      }
+      const config = data?.config as StudioShapeSite;
+      setShapeConfig(config);
+      setShapeMessages((prev) => [
+        ...prev,
+        { role: 'user', text: prompt },
+        {
+          role: 'assistant',
+          text:
+            `Layout: ${config.layoutPreset}. Hero: ${config.sections?.hero?.title || 'n/a'}. ` +
+            `Features: ${config.sections?.features?.items?.length || 0} highlights.`,
+        },
+      ]);
+    } catch (err: any) {
+      setShapeError(typeof err?.message === 'string' ? err.message : 'Unexpected SHAPEAI error.');
+    } finally {
+      setShapeLoading(false);
+    }
   };
 
   return (
@@ -139,6 +184,106 @@ export default function Home() {
                 <FeatureBubble label="AI layout suggestion" />
                 <FeatureBubble label="Theme: Midnight Glow" />
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* SHAPEAI live builder & conversation */}
+      <section className="bg-slate-900/80 py-12">
+        <div className="mx-auto grid max-w-6xl gap-6 px-6 lg:grid-cols-2">
+          <div className="space-y-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-brand-200">ShapeAI live</p>
+            <h3 className="text-3xl font-bold text-white">Chat with SHAPEAI to build your site</h3>
+            <p className="text-slate-300">
+              Describe your business, audience, and goal. SHAPEAI will propose a layout, hero copy, features, and story in seconds.
+            </p>
+            <form onSubmit={handleShapeSubmit} className="space-y-3">
+              <textarea
+                className="w-full rounded-2xl border border-white/15 bg-white/5 p-4 text-sm text-white placeholder:text-slate-400 focus-visible:ring-brand-400"
+                rows={4}
+                value={shapePrompt}
+                onChange={(e) => setShapePrompt(e.target.value)}
+                placeholder="Tell SHAPEAI about your project..."
+              />
+              <div className="flex items-center gap-3">
+                <Button type="submit" disabled={shapeLoading} className="rounded-full px-5">
+                  {shapeLoading ? 'Thinking…' : 'Ask SHAPEAI'}
+                </Button>
+                <Button asChild variant="outline" className="rounded-full border-white/20 bg-white/5 text-white hover:bg-white/10">
+                  <Link href="/builder">Open visual builder</Link>
+                </Button>
+              </div>
+              {shapeError && <p className="text-sm text-rose-300">⚠️ {shapeError}</p>}
+            </form>
+            <div className="space-y-2 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-brand-200">Conversation</p>
+              {shapeMessages.length === 0 ? (
+                <p className="text-sm text-slate-300">No conversation yet. Ask SHAPEAI to start.</p>
+              ) : (
+                <div className="space-y-3 max-h-64 overflow-auto pr-1">
+                  {shapeMessages.map((msg, idx) => (
+                    <div
+                      key={`${msg.role}-${idx}`}
+                      className={`rounded-xl p-3 text-sm ${
+                        msg.role === 'user' ? 'bg-white/10 text-white' : 'bg-brand-500/15 text-brand-50'
+                      }`}
+                    >
+                      <span className="font-semibold uppercase tracking-[0.1em] text-xs mr-2">
+                        {msg.role === 'user' ? 'You' : 'SHAPEAI'}
+                      </span>
+                      {msg.text}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <Card className="rounded-3xl border-white/10 bg-white/5 p-4 shadow-xl shadow-brand-900/40">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-white">Generated layout snapshot</CardTitle>
+              <CardDescription className="text-slate-300">
+                Live output from SHAPEAI. Wire it into the builder or publish as-is.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {shapeConfig ? (
+                <>
+                  <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm text-white">
+                    <p className="text-xs uppercase tracking-[0.2em] text-brand-200 mb-1">Hero</p>
+                    <p className="text-lg font-semibold">{shapeConfig.sections?.hero?.title}</p>
+                    <p className="text-slate-200">{shapeConfig.sections?.hero?.subtitle}</p>
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-white/80">
+                      <span className="rounded-full bg-white/10 px-3 py-1">Primary: {shapeConfig.sections?.hero?.primaryCtaLabel}</span>
+                      <span className="rounded-full bg-white/10 px-3 py-1">Secondary: {shapeConfig.sections?.hero?.secondaryCtaLabel}</span>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-xs uppercase tracking-[0.2em] text-brand-200 mb-3">Top features</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {(shapeConfig.sections?.features?.items || []).slice(0, 4).map((item, idx) => (
+                        <div key={`${item.title}-${idx}`} className="rounded-xl border border-white/10 bg-white/5 p-3">
+                          <p className="text-sm font-semibold text-white">{item.title}</p>
+                          <p className="text-xs text-slate-200">{item.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-xs uppercase tracking-[0.2em] text-brand-200 mb-2">Story</p>
+                    <div className="space-y-2 text-sm text-slate-200">
+                      {(shapeConfig.sections?.story?.paragraphs || []).slice(0, 3).map((p, idx) => (
+                        <p key={idx}>{p}</p>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 p-6 text-sm text-slate-300">
+                  Ask SHAPEAI to generate a layout and preview will appear here.
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
