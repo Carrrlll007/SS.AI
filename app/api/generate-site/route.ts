@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { StudioShapeSite } from '@/lib/types';
 
-// Use a model name supported by the v1beta generateContent endpoint.
-// Allow overriding the Gemini model; default to a widely available model.
+// Allow overriding the Gemini model; default to a widely available model. We will try multiple endpoints.
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
 const systemPrompt =
@@ -18,34 +17,57 @@ async function callGemini(prompt: string, siteId?: string) {
     throw new Error('Missing Gemini API key');
   }
   const fullPrompt = `${systemPrompt}\n\nUser prompt:\n${prompt || 'Generate a StudioShapeSite for a new project.'}`;
-  const response = await fetch(
+  const endpoints = [
     `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: fullPrompt }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.6,
-        },
-      }),
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
+  ];
+
+  const requestBody = {
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: fullPrompt }],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.6,
+    },
+  };
+
+  const errors: string[] = [];
+
+  for (const url of endpoints) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        errors.push(`Endpoint ${url} => ${errorText}`);
+        continue;
+      }
+
+      const completion = await response.json();
+      const text = completion?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) {
+        errors.push(`Endpoint ${url} => empty content`);
+        continue;
+      }
+      const parsed: StudioShapeSite = JSON.parse(text);
+      if (siteId) parsed.id = siteId;
+      return parsed;
+    } catch (err: any) {
+      errors.push(`Endpoint ${url} => ${err?.message || 'unknown error'}`);
+      continue;
     }
-  );
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Gemini request failed: ${errorText}`);
   }
-  const completion = await response.json();
-  const text = completion?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('No Gemini content returned');
-  const parsed: StudioShapeSite = JSON.parse(text);
-  if (siteId) parsed.id = siteId;
-  return parsed;
+
+  throw new Error(`Gemini request failed. Tried multiple endpoints/models. Errors: ${errors.join(' | ')}`);
 }
 
 export async function POST(request: Request) {
