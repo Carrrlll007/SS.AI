@@ -208,13 +208,18 @@ export default function Home() {
               />
               <div className="flex items-center gap-3">
                 <Button type="submit" disabled={shapeLoading} className="rounded-full px-5">
-                  {shapeLoading ? 'Thinking…' : 'Ask SHAPEAI'}
+                  {shapeLoading ? 'Thinking...' : 'Ask SHAPEAI'}
                 </Button>
-                <Button asChild variant="outline" className="rounded-full border-white/20 bg-white/5 text-white hover:bg-white/10">
-                  <Link href="/builder">Open visual builder</Link>
+                <Button
+                  asChild
+                  href="/builder"
+                  variant="outline"
+                  className="rounded-full border-white/20 bg-white/5 text-white hover:bg-white/10"
+                >
+                  Open visual builder
                 </Button>
               </div>
-              {shapeError && <p className="text-sm text-rose-300">⚠️ {shapeError}</p>}
+              {shapeError && <p className="text-sm text-rose-300">Warning: {shapeError}</p>}
             </form>
             <div className="space-y-2 rounded-2xl border border-white/10 bg-white/5 p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-brand-200">Conversation</p>
