@@ -55,7 +55,7 @@ function Install-AgentDeps {
     Pop-Location
 }
 
-function Ensure-AgentReady {
+function Test-AgentReady {
     param(
         [hashtable]$Agent
     )
@@ -126,7 +126,7 @@ function Start-AgentJob {
 $jobs = @()
 
 foreach ($agent in $agents) {
-    $pythonExe = Ensure-AgentReady -Agent $agent
+    $pythonExe = Test-AgentReady -Agent $agent
     if ($null -eq $pythonExe) { continue }
 
     $job = Start-AgentJob -Agent $agent -PythonExe $pythonExe
