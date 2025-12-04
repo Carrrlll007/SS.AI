@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import type { StudioShapeSite } from '@/lib/types';
 
 // Use a model name supported by the v1beta generateContent endpoint.
-// Use a model name that is available for v1beta generateContent.
-const GEMINI_MODEL = 'gemini-1.5-flash-001';
+// Allow overriding the Gemini model; default to a widely available model.
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
 const systemPrompt =
   'You are StudioShape’s AI site generator. Analyze the user’s description of their business, audience, and goals. ' +
@@ -19,7 +19,7 @@ async function callGemini(prompt: string, siteId?: string) {
   }
   const fullPrompt = `${systemPrompt}\n\nUser prompt:\n${prompt || 'Generate a StudioShapeSite for a new project.'}`;
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
