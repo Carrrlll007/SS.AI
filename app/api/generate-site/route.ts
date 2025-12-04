@@ -3,7 +3,6 @@ import type { StudioShapeSite } from '@/lib/types';
 
 // Use a model name supported by the v1beta generateContent endpoint.
 const GEMINI_MODEL = 'gemini-1.5-flash';
-const OPENAI_MODEL = 'gpt-4o-mini';
 
 const systemPrompt =
   'You are StudioShape’s AI site generator. Analyze the user’s description of their business, audience, and goals. ' +
@@ -12,38 +11,6 @@ const systemPrompt =
   'Produce a complete StudioShapeSite object with concise, high-quality copy. ' +
   'Use hex colors for theme values and keep the copy realistic and benefit-driven. ' +
   'Respond with ONLY valid JSON matching the StudioShapeSite TypeScript shape. No markdown, no extra keys.';
-
-async function callOpenAI(prompt: string, siteId?: string) {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('Missing OpenAI API key');
-  }
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: prompt || 'Generate a StudioShapeSite for a new project.' },
-  ];
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      temperature: 0.6,
-      messages,
-    }),
-  });
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`OpenAI request failed: ${errorText}`);
-  }
-  const completion = await response.json();
-  const content = completion?.choices?.[0]?.message?.content;
-  if (!content) throw new Error('No AI content returned');
-  const parsed: StudioShapeSite = JSON.parse(content);
-  if (siteId) parsed.id = siteId;
-  return parsed;
-}
 
 async function callGemini(prompt: string, siteId?: string) {
   if (!process.env.GEMINI_API_KEY) {
@@ -84,15 +51,12 @@ export async function POST(request: Request) {
   try {
     const { prompt, siteId } = await request.json();
     const hasGemini = Boolean(process.env.GEMINI_API_KEY);
-    const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
 
-    if (!hasGemini && !hasOpenAI) {
-      return NextResponse.json({ error: 'No AI provider configured' }, { status: 500 });
+    if (!hasGemini) {
+      return NextResponse.json({ error: 'No AI provider configured: set GEMINI_API_KEY' }, { status: 500 });
     }
 
-    const config = hasGemini
-      ? await callGemini(prompt, siteId)
-      : await callOpenAI(prompt, siteId);
+    const config = await callGemini(prompt, siteId);
 
     return NextResponse.json({ config });
   } catch (error: any) {
