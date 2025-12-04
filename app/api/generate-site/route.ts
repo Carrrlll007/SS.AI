@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import type { StudioShapeSite } from '@/lib/types';
 
 // Use a model name supported by the v1beta generateContent endpoint.
-const GEMINI_MODEL = 'gemini-1.5-flash';
+// Use a model name that is available for v1beta generateContent.
+const GEMINI_MODEL = 'gemini-1.5-flash-001';
 
 const systemPrompt =
   'You are StudioShape’s AI site generator. Analyze the user’s description of their business, audience, and goals. ' +
