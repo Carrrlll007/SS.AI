@@ -5,12 +5,7 @@ export async function sendMessageToShapeAI(
   message: string,
   sessionId: string
 ): Promise<string> {
-  const url = process.env.NEXT_PUBLIC_N8N_CHAT_URL || process.env.N8N_CHAT_URL;
-  if (!url) {
-    throw new Error('N8N_CHAT_URL (or NEXT_PUBLIC_N8N_CHAT_URL) is not set');
-  }
-
-  const res = await fetch(url, {
+  const res = await fetch('/api/shapeai-chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message, sessionId }),
